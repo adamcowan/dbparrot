@@ -1,8 +1,11 @@
 package main
 
 import (
+    "fmt"
     "log"
     "net"
+    "os"
+    "strconv"
 )
 
 func main() {
@@ -12,7 +15,17 @@ func main() {
     // strip auth?
     // cache ttl
 
-    backend := &MongoBackend{"localhost", 27017}
+    port := 27017
+    if len(os.Args) > 1 {
+        p, err := strconv.Atoi(os.Args[1])
+        if err != nil {
+            fmt.Println(err)
+        } else {
+            port = p
+        }
+    }
+
+    backend := &MongoBackend{"localhost", port}
 
     server, err := net.Listen("tcp", ":30001")
     if err != nil {
