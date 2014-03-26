@@ -59,6 +59,8 @@ func handleProxy(client net.Conn, backend *MongoBackend) {
                         case OP_INSERT:
                             fmt.Println("Ignoring INSERT")
                             continue
+                        case OP_GET_MORE:
+                            fallthrough
                         case OP_QUERY:
                             result := CacheGet(cmd.Payload)
                             if result != nil {
