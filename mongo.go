@@ -5,6 +5,7 @@ import (
     "bufio"
     "bytes"
     "fmt"
+    "io"
     "log"
     "net"
     "runtime/debug"
@@ -117,6 +118,21 @@ func parseCmd(header []byte) *MongoCmd {
     return &MongoCmd{messageLength, requestId, responseTo, opCode, nil}
 }
 
+func ReadEnough(reader io.Reader, buf []byte) (int, error) {
+    pos := 0
+    length := len(buf)
+    var err error
+    var n int
+    for pos < length {
+        n, err = reader.Read(buf[pos:])
+        if err != nil {
+            return pos, err
+        }
+        pos += n
+    }
+    return pos, err
+}
+
 func mongoStream(conn net.Conn) (chan *MongoCmd, chan error) {
     buf := make([]byte, 16)
     stream := make(chan *MongoCmd)
@@ -124,7 +140,7 @@ func mongoStream(conn net.Conn) (chan *MongoCmd, chan error) {
     go func() {
         reader := bufio.NewReader(conn)
         for {
-            _, err := reader.Read(buf)
+            _, err := ReadEnough(reader, buf)
             if err != nil {
                 errchan <- err
                 return
@@ -134,7 +150,7 @@ func mongoStream(conn net.Conn) (chan *MongoCmd, chan error) {
             length := cmd.MessageLength - 16
             if length > 16 {
                 payload := make([]byte, length)
-                _, err := reader.Read(payload)
+                _, err := ReadEnough(reader, payload)
                 if err != nil {
                     debug.PrintStack()
                     log.Fatal(err)
